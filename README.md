@@ -62,6 +62,33 @@ import { abi, bytecode } from "../artifacts/contracts/Ballot.sol/Ballot.json";
 
 ```
 
+Ex Result:
+```bash
+❯ npx ts-node --files ./scripts/DeployWithViem.ts "arg1" "arg2" "arg3"
+Proposals:
+Proposal N. 1: arg1
+Proposal N. 2: arg2
+Proposal N. 3: arg3
+Last block number: 6506178n
+Deployer address: 0x7774...3280
+Deployer Connected!! 
+balance: 0.145897863175809 ETH
+
+Deploying Ballot contract
+Transaction hash: 0x65db1a702732be51c2785abcf55c2b6d0dbd3b2d0ee3f1b9425ba7feb2797876
+Waiting for confirmations...
+Ballot contract deployed to: 0x8477483d499fdf409e57da7c263de7178153b7cd
+Proposals: 
+{
+  index: 0,
+  name: 'arg1',
+  proposal: [
+    '0x6172673100000000000000000000000000000000000000000000000000000000',
+    0n
+  ]
+}
+```
+
 
 
 ### Useful Pieces MOCHA
