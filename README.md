@@ -1,13 +1,153 @@
 # Lesson-7---Coding-Ballot.sol
 
+### Useful Pieces VIEM
+
++ get deployer wallet client
+
+```typescript
+async function getDeployerWalletClient(publicClient: any) {
+    // use view to get wallet 
+    const account = privateKeyToAccount(`0x${deployerPrivateKey}`);
+    // connect wallet client to Sepolia
+    const deployer = createWalletClient({
+        account,
+        chain: sepolia,
+        transport: http(`${providerApiKey}`),
+    });
+    console.log("Deployer address:", cropAddress(deployer.account.address));
+
+    // get balance
+    const balance = await publicClient.getBalance({
+        address: deployer.account.address,
+    });
+    console.log(
+        "Deployer Connected!! \nbalance:",
+        formatEther(balance),
+        deployer.chain.nativeCurrency.symbol
+    );
+    return deployer;
+}
+```
+
++ Public client 
+```typescript
+    // connect public client
+    const publicClient = createPublicClient({
+        chain: sepolia,
+        transport: http(`${providerApiKey}`),
+    });
+
+    // check connection using getBlockNumber
+    const blockNumber = await publicClient.getBlockNumber();
+    console.log("Last block number:", blockNumber);
+```
+
++ Deploy contract 
+```typescript
+import { abi, bytecode } from "../artifacts/contracts/Ballot.sol/Ballot.json";
+    // deploy, pass contract ABI, bytecode and args
+    const hash = await deployer.deployContract({
+        abi,
+        bytecode: bytecode as `0x${string}`,
+        args: [proposals.map((prop) => toHex(prop, { size: 32 }))],
+    })
+    // wait for transaction receipt
+    const receipt = await publicClient.waitForTransactionReceipt({ hash });
+    console.log("Ballot contract deployed to:", receipt.contractAddress)
+    // type check for CA
+    if (!receipt.contractAddress) {
+        console.log("Contract deployment failed");
+        return;
+    }
+
+```
+
+
+
+### Useful Pieces MOCHA
+
++ deploy and attach
+```typescript
+async function deployContract() {
+    // get client
+    const publicClient = await viem.getPublicClient();
+    // get wallets
+    const [chairperson, voter_1, voter_2, voter_3, voter_4, voter_5] = await viem.getWalletClients();
+    // deploy contract
+    const ballotContract = await viem.deployContract("Ballot",
+        [PROPOSALS.map((p) => toHex(p, { size: 32 }))],
+    );
+    // things we will use on each test
+    return {
+        publicClient,
+        chairperson,
+        voter_1,
+        voter_2,
+        voter_3,
+        voter_4,
+        voter_5,
+        ballotContract,
+    };
+}
+
+async function getVoterContract(voter: any, contractAddress: any) {
+    return await viem.getContractAt(
+        "Ballot",
+        contractAddress,
+        { client: { wallet: voter } }
+    );
+}
+```
+
++ kinda complex test
+```typescript
+describe("when the voter interacts with the delegate function in the contract", async () => {
+    it("should transfer voting power", async () => {
+        const { ballotContract, voter_1, voter_2 } = await loadFixture(deployContract);
+        // give voter_1 right to vote
+        // NOTE: voter_2 needs to have the right to vote to delegate:
+        /**
+         *   Line 107: delegate
+         *   // Voters cannot delegate to accounts that cannot vote.
+         *   require(delegate_.weight >= 1);
+         */
+        await ballotContract.write.giveRightToVote([voter_1.account.address]);
+        await ballotContract.write.giveRightToVote([voter_2.account.address]);
+        // voter_1 transfer right to voter_2
+        const voterBallot = await getVoterContract(voter_1, ballotContract.address);
+        await voterBallot.write.delegate([voter_2.account.address]);
+        // check voter_2 weight 2
+        const voterStruct_2 = await ballotContract.read.voters([voter_2.account.address]);
+        expect(voterStruct_2[0]).to.eq(BigInt(2));
+        // check voter_1 voted already (delegate counts as a vote)
+        const voterStruct_1 = await ballotContract.read.voters([voter_1.account.address]);
+        expect(voterStruct_1[1]).to.eq(true);
+    });
+});
+```
+
++ revert
+```typescript
+
+it("should revert", async () => {
+    const { ballotContract, voter_1 } = await loadFixture(deployContract)
+    // use voter_1 to try to delegate without right to vote should revert
+    const voterBallot = await getVoterContract(voter_1, ballotContract.address);
+    expect(voterBallot.write.delegate([voter_1.account.address])).to.be.rejectedWith("You have no right to vote");
+});
+
+// also like this (other test)
+// https://github.com/Encode-Club-Solidity-Bootcamp/Lesson-07/issues/44
+expect(ballotContract.write.giveRightToVote([voter_1.account.address])).to.be.rejected;`
+
+```
+
+### Mocha Tests
 ```bash
 ❯ npm run test
 
 > test
 > npx hardhat test
-
-
-
   Ballot
     when the contract is deployed
       ✔ has the provided proposals (685ms)
@@ -57,73 +197,6 @@ Winner is Proposal 2
   24 passing (821ms)
 ```
 
-### Useful Pieces
-
-```typescript
-async function deployContract() {
-    // get client
-    const publicClient = await viem.getPublicClient();
-    // get wallets
-    const [chairperson, voter_1, voter_2, voter_3, voter_4, voter_5] = await viem.getWalletClients();
-    // deploy contract
-    const ballotContract = await viem.deployContract("Ballot",
-        [PROPOSALS.map((p) => toHex(p, { size: 32 }))],
-    );
-    // things we will use on each test
-    return {
-        publicClient,
-        chairperson,
-        voter_1,
-        voter_2,
-        voter_3,
-        voter_4,
-        voter_5,
-        ballotContract,
-    };
-}
-
-async function getVoterContract(voter: any, contractAddress: any) {
-    return await viem.getContractAt(
-        "Ballot",
-        contractAddress,
-        { client: { wallet: voter } }
-    );
-}
-
-describe("when the voter interacts with the delegate function in the contract", async () => {
-    it("should transfer voting power", async () => {
-        const { ballotContract, voter_1, voter_2 } = await loadFixture(deployContract);
-        // give voter_1 right to vote
-        // NOTE: voter_2 needs to have the right to vote to delegate:
-        /**
-         *   Line 107: delegate
-         *   // Voters cannot delegate to accounts that cannot vote.
-         *   require(delegate_.weight >= 1);
-         */
-        await ballotContract.write.giveRightToVote([voter_1.account.address]);
-        await ballotContract.write.giveRightToVote([voter_2.account.address]);
-        // voter_1 transfer right to voter_2
-        const voterBallot = await getVoterContract(voter_1, ballotContract.address);
-        await voterBallot.write.delegate([voter_2.account.address]);
-        // check voter_2 weight 2
-        const voterStruct_2 = await ballotContract.read.voters([voter_2.account.address]);
-        expect(voterStruct_2[0]).to.eq(BigInt(2));
-        // check voter_1 voted already (delegate counts as a vote)
-        const voterStruct_1 = await ballotContract.read.voters([voter_1.account.address]);
-        expect(voterStruct_1[1]).to.eq(true);
-    });
-});
-
-
-
-it("should revert", async () => {
-    const { ballotContract, voter_1 } = await loadFixture(deployContract)
-    // use voter_1 to try to delegate without right to vote should revert
-    const voterBallot = await getVoterContract(voter_1, ballotContract.address);
-    expect(voterBallot.write.delegate([voter_1.account.address])).to.be.rejectedWith("You have no right to vote");
-});
-
-```
 
 ### Contract 
 
