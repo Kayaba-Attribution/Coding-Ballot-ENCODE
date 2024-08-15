@@ -1,5 +1,9 @@
 # Coding-Ballot Notes
 
++ See scripts/DeployWithViem.ts for live deployment
++ See scripts/DeployWithHardhat.ts for local deployment
++ See test on test/Ballot.ts
+
 ### Useful Pieces VIEM
 
 + get deployer wallet client
@@ -62,7 +66,7 @@ import { abi, bytecode } from "../artifacts/contracts/Ballot.sol/Ballot.json";
 
 ```
 
-Ex Result:
+Ex Result from **DeployWithViem.ts**
 ```bash
 ❯ npx ts-node --files ./scripts/DeployWithViem.ts "arg1" "arg2" "arg3"
 Proposals:
