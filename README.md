@@ -1,4 +1,4 @@
-# Lesson-7---Coding-Ballot.sol
+# Coding-Ballot Notes
 
 ### Useful Pieces VIEM
 
