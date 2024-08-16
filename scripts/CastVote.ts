@@ -1,49 +1,16 @@
 import { createPublicClient, http, createWalletClient, formatEther } from "viem";
-import type { PublicClient } from "viem/clients/createPublicClient";
 import { toHex, hexToString } from "viem/utils";
-import { privateKeyToAccount } from "viem/accounts";
 import { sepolia } from "viem/chains";
 import * as dotenv from "dotenv";
-import { getContract } from 'viem'
-
+import { cropAddress, getWalletClient } from "./Helpers";
 import { abi, bytecode } from "../artifacts/contracts/Ballot.sol/Ballot.json";
 
 dotenv.config();
 
-
-
-function cropAddress(address: string) {
-    return `${address.slice(0, 6)}...${address.slice(-4)}`;
-}
 // cosntants
 const providerApiKey = process.env.ALCHEMY_API_KEY || "";
 const deployerPrivateKey = process.env.PRIVATE_KEY || "";
 const participantApiKey = process.env.PARTICIPANT_API_KEY || "";
-
-const Participant = "0xea17C45EC037D305bC4148f1fc64A27Cb8B0cfED"
-
-async function getDeployerWalletClient(publicClient: any, privateKey:any) {
-    // use view to get wallet 
-    const account = privateKeyToAccount(`0x${privateKey}`);
-    // connect wallet client to Sepolia
-    const deployer = createWalletClient({
-        account,
-        chain: sepolia,
-        transport: http(`${providerApiKey}`),
-    });
-    console.log("Deployer address:", cropAddress(deployer.account.address));
-
-    // get balance
-    const balance = await publicClient.getBalance({
-        address: deployer.account.address,
-    });
-    console.log(
-        "Deployer Connected!! \nbalance:",
-        formatEther(balance),
-        deployer.chain.nativeCurrency.symbol
-    );
-    return deployer;
-}
 
 async function main() {
 
@@ -81,8 +48,8 @@ async function main() {
     console.log("Confirm? (Y/n)");
 
     // get wallet client
-    const deployer = await getDeployerWalletClient(publicClient, deployerPrivateKey);
-    const participant = await getDeployerWalletClient(publicClient, participantApiKey);
+    const deployer = await getWalletClient(publicClient, deployerPrivateKey);
+    const participant = await getWalletClient(publicClient, participantApiKey);
 
     // TODO: how does this work? stdin.addListener
     // ! send tx
@@ -117,7 +84,7 @@ async function main() {
                 address: contractAddress,
                 abi,
                 functionName: "giveRightToVote",
-                args: ["0x888ebea583209695A27BD9b8f604aB2FfbeF0654"]
+                args: ["0x2002469Ae0068e8863a7531B5FFD56E283752D8F"]
             });
             console.log("GIVE VOTING POWER");
             console.log("Transaction hash:", hash);

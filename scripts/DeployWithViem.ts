@@ -4,42 +4,15 @@ import { toHex, hexToString } from "viem/utils";
 import { privateKeyToAccount } from "viem/accounts";
 import { sepolia } from "viem/chains";
 import * as dotenv from "dotenv";
-
+import { cropAddress, getWalletClient } from "./Helpers";
 import { abi, bytecode } from "../artifacts/contracts/Ballot.sol/Ballot.json";
 
 dotenv.config();
 
-function cropAddress(address: string) {
-    return `${address.slice(0, 6)}...${address.slice(-4)}`;
-}
 
 const providerApiKey = process.env.ALCHEMY_API_KEY || "";
 const deployerPrivateKey = process.env.PRIVATE_KEY || "";
-const DEPLOY = true;
-
-async function getDeployerWalletClient(publicClient: any) {
-    // use view to get wallet 
-    const account = privateKeyToAccount(`0x${deployerPrivateKey}`);
-    // connect wallet client to Sepolia
-    const deployer = createWalletClient({
-        account,
-        chain: sepolia,
-        transport: http(`${providerApiKey}`),
-    });
-    console.log("Deployer address:", cropAddress(deployer.account.address));
-
-    // get balance
-    const balance = await publicClient.getBalance({
-        address: deployer.account.address,
-    });
-    console.log(
-        "Deployer Connected!! \nbalance:",
-        formatEther(balance),
-        deployer.chain.nativeCurrency.symbol
-    );
-    return deployer;
-}
-
+const DEPLOY = false;
 
 async function main() {
 
@@ -67,7 +40,7 @@ async function main() {
     console.log("Last block number:", blockNumber);
 
     // get wallet client
-    const deployer = await getDeployerWalletClient(publicClient);
+    const deployer = await getWalletClient(publicClient, deployerPrivateKey);
 
     if (DEPLOY) {
         console.log("\nDeploying Ballot contract");
