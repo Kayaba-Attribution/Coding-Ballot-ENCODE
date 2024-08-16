@@ -45,14 +45,7 @@ contract Ballot {
             }));
         }
     }
-
-    function getProposal(uint index) external view returns (bytes32 name, uint voteCount) {
-        name = proposals[index].name;
-        voteCount = proposals[index].voteCount;
-
-        return (name, voteCount);
-    }
-
+    
     // Give `voter` the right to vote on this ballot.
     // May only be called by `chairperson`.
     function giveRightToVote(address voter) external {
