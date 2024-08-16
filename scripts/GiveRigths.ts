@@ -13,7 +13,9 @@ const deployerPrivateKey = process.env.PRIVATE_KEY || "";
 const participantApiKey = process.env.PARTICIPANT_API_KEY || "";
 
 // example
-// ❯ npx ts-node --files ./scripts/CastVote.ts "0xaa9fc66cc11bf4268e08cf9431bf40ea4d8300a6" 0 
+// npx ts-node --files ./scripts/GiveRigths.ts "0xaa9fc66cc11bf4268e08cf9431bf40ea4d8300a6" "0x0322Fbaef4f28E2854711237C848F6111e725874"
+
+// Transaction hash: 0x07e0dd1d42781a50a29fc5f61a5849c9eeb94db2ecade45fb186896bae4900e2
 
 async function main() {
 
@@ -33,22 +35,9 @@ async function main() {
     if (!/^0x[a-fA-F0-9]{40}$/.test(contractAddress))
         throw new Error("Invalid contract address");
 
-    const proposalIndex = parameters[1];
-    if (isNaN(Number(proposalIndex))) throw new Error("Invalid proposal index");
-
-    // contract proposalIndex
-
-    // ! Attaching the contract and checking the selected option
-    console.log("Proposal selected: ");
-    const proposal = (await publicClient.readContract({
-        address: contractAddress,
-        abi,
-        functionName: "proposals",
-        args: [BigInt(proposalIndex)],
-    })) as any[];
-    const name = hexToString(proposal[0], { size: 32 });
-    console.log("Voting to proposal", name);
-    console.log("Confirm? (Y/n)");
+    const addressToGiveRigthsTo = parameters[1];
+    if (!/^0x[a-fA-F0-9]{40}$/.test(addressToGiveRigthsTo))
+        throw new Error("Invalid contract address");
 
     // get wallet client
     const deployer = await getWalletClient(publicClient, deployerPrivateKey);
@@ -56,19 +45,17 @@ async function main() {
 
     // TODO: how does this work? stdin.addListener
     // ! send tx
-
-    // VOTE DONE
+    //GIVE VOTING POWER DONE
     const stdin = process.stdin;
     stdin.addListener("data", async function (d) {
         if (d.toString().trim().toLowerCase() != "n") {
-            // change object to person that is voting
-            // ie. deployer or participant
-            const hash = await participant.writeContract({
+            const hash = await deployer.writeContract({
                 address: contractAddress,
                 abi,
-                functionName: "vote",
-                args: [BigInt(proposalIndex)],
+                functionName: "giveRightToVote",
+                args: [addressToGiveRigthsTo]
             });
+            console.log("GIVE VOTING POWER");
             console.log("Transaction hash:", hash);
             console.log("Waiting for confirmations...");
             const receipt = await publicClient.waitForTransactionReceipt({ hash });
@@ -78,6 +65,13 @@ async function main() {
         }
         process.exit();
     });
+
+    /*
+    Delegate Voting Power:
+    1. Chairman gives new voter the right to vote
+    2. New voter delegates to chairman
+    3. Chairman votes on behalf of new voter
+    */
 }
 
 main().catch((error) => {

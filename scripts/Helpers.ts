@@ -18,17 +18,13 @@ async function getWalletClient(publicClient: any, privateKey:any) {
         chain: sepolia,
         transport: http(`${providerApiKey}`),
     });
-    console.log("Deployer address:", cropAddress(deployer.account.address));
 
     // get balance
     const balance = await publicClient.getBalance({
         address: deployer.account.address,
     });
-    console.log(
-        "Deployer Connected!! \nbalance:",
-        formatEther(balance),
-        deployer.chain.nativeCurrency.symbol
-    );
+
+    console.log(`Deployer ${cropAddress(deployer.account.address)} connected! Balance: ${formatEther(balance)} ${deployer.chain.nativeCurrency.symbol}`);
     return deployer;
 }
 
