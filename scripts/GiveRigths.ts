@@ -65,13 +65,6 @@ async function main() {
         }
         process.exit();
     });
-
-    /*
-    Delegate Voting Power:
-    1. Chairman gives new voter the right to vote
-    2. New voter delegates to chairman
-    3. Chairman votes on behalf of new voter
-    */
 }
 
 main().catch((error) => {

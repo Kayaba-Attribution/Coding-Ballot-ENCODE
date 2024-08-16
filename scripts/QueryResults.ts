@@ -4,7 +4,7 @@ import { toHex, hexToString } from "viem/utils";
 import { privateKeyToAccount } from "viem/accounts";
 import { sepolia } from "viem/chains";
 import * as dotenv from "dotenv";
-import { cropAddress } from "./Helpers";
+import { cropAddress, getVoterData } from "./Helpers";
 import { abi, bytecode } from "../artifacts/contracts/Ballot.sol/Ballot.json";
 dotenv.config();
 
@@ -20,36 +20,7 @@ dotenv.config();
 // Constants
 const providerApiKey = process.env.ALCHEMY_API_KEY || "";
 
-async function getVoterData(publicClient: any, contractAddress: `0x${string}`, voterAddress: `0x${string}`) {
-    try {
-        const voterData = await publicClient.readContract({
-            address: contractAddress,
-            abi,
-            functionName: "voters",
-            args: [voterAddress],
-        }) as any[];
 
-        const voter = {
-            weight: voterData[0],
-            voted: voterData[1],
-            delegate: voterData[2],
-            vote: voterData[3],
-        };
-
-        console.table({
-            Address: voterAddress,
-            Weight: voter.weight.toString(),
-            Voted: voter.voted,
-            Delegate: voter.delegate,
-            Vote: voter.vote.toString(),
-        });
-
-        return voter;
-    } catch (error) {
-        console.error(`Error reading voter data for address ${voterAddress}:`, error);
-        return null;
-    }
-}
 
 async function main() {
     // connect public client
