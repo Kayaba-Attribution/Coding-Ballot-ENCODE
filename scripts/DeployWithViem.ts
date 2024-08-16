@@ -6,6 +6,7 @@ import { sepolia } from "viem/chains";
 import * as dotenv from "dotenv";
 
 import { abi, bytecode } from "../artifacts/contracts/Ballot.sol/Ballot.json";
+
 dotenv.config();
 
 function cropAddress(address: string) {
